@@ -2,9 +2,17 @@
     //this Model class is what we create our own models from using the extends keyword so User inherits all of the functionality that the Model class does
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/connection');
+const bcrypt = require('bcrypt');
 
 //create our User model
-class User extends Model {}
+class User extends Model {
+    //set up method to run on instance data (per user) to check password
+    //checkPassword is an instance method that takes in the plaintext password retrieved from the client request at req.body.email and compares that with the hashed password
+    checkPassword(loginPw) {
+        //using the keyword 'this', we can access this user's properties, including the password, which was stored as a hashed string. 
+        return bcrypt.compareSync(loginPw, this.password);
+    }
+}
 
 //use the .init() method to initialize the model's data and configuration, passing in two objects as arguments
     //first object: defines the columns and data types for those columns
@@ -52,6 +60,19 @@ User.init(
         }
     },
     {
+        hooks: {
+            //set up beforeCreate lifecycle 'hook' functionality
+            async beforeCreate(newUserData) {
+                //async is used as a prefix to the function that contains the asynchronous function. await can be used to prefix the async function, which will assign the value from the response to the newUserData's password property. newUserData is then return to the application with the hashed password
+                newUserData.password = await bcrypt.hash(newUserData.password, 10);
+                    return newUserData;
+                },
+                    //set up beforeUpdate lifecycle 'hook' functionality
+                    async beforeUpdate(updatedUserData) {
+                        updatedUserData.password = await bcrypt.hash(updatedUserData.password, 10);
+                        return updatedUserData;
+                    }
+            },
         //TABLE CONFIGURATION OPTIONS GO HERE (https://sequelize.org/v5/manual/models-definition.html#configuration)
 
         //pass in our imported sequelize connection (the direct connection to our database)

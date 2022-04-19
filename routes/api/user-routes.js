@@ -54,6 +54,27 @@ router.post('/', (req, res) => {
     });
 });
 
+router.post('/login', (req,res) => {
+    //expects {email: 'email@email.com', password: 'password'}
+    User.findOne({
+        where: {
+            email: req.body.email
+        }
+    }).then(dbUserData => {
+        if (!dbUserData) {
+            res.status(400).json({ message: 'no user with that email address.' });
+            return;
+        }
+        //verify user
+        const validPassword = dbUserData.checkPassword(req.body.password);
+            if (!validPassword) {
+                res.status(400).json({ message: 'incorrect password.' });
+                return;
+            }
+            res.json({ user: dbUserData, message: 'you are now logged in.' });
+    })
+})
+
 //PUT /api/users/1
 router.put('/:id', (req, res) => {
     //expects {username: 'username', email: 'email@email.com', password: 'password' }
@@ -62,6 +83,8 @@ router.put('/:id', (req, res) => {
 
     //.update() method combines the parameters for creating data and looking up data. we pass in the req.body to provide the new data we want to use in the update and req.params.id to indicate where exactly we want that new data to be used. in SQL, this looks like UPDATE users SET username = 'username', email = 'email@email.com', password = 'NEWpassword!' WHERE id = 1;
     User.update(req.body, {
+        //individualHooks makes sure the hook for the hashed password is created
+        individualHooks: true,
         where: {
             id: req.params.id
         }
