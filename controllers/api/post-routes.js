@@ -95,13 +95,16 @@ router.post('/', (req, res) => {
 
 //PUT /api/posts/upvote
 router.put('/upvote', (req, res) => {
-    //custom static method created in models/Post.js
-    Post.upvote(req.body, { Vote })
+    //make sure the session exists first
+    if (req.session) {
+        //pass session id along with all destructured properties on req.body
+        Post.upvote({...req.body, user_id: req.session.user_id}, { Vote, Comment, User })
         .then(updatedPostData => res.json(updatedPostData))
         .catch(err => {
             console.log(err);
             res.status(400).json(err);
-    })
+        });
+    } 
 });
 
 //updating an existing entry--the idea is to first retrieve the post instance by id, then alter the value of the title on this instance of a post
