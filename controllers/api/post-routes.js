@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { Post, User, Vote, Comment } = require('../../models');
 const sequelize = require('../../config/connection');
+const withAuth = require('../../utils/auth');
 
 //get all users
 router.get('/', (req, res) => {
@@ -37,7 +38,7 @@ router.get('/', (req, res) => {
 });
 
 //get a single post
-router.get('/:id', (req, res) => {
+router.get('/:id', withAuth, (req, res) => {
     Post.findOne({
         //use req.params to retrieve the id property from the route. we use the where property to set the value of the id using req.params.id
         where: {
@@ -84,7 +85,7 @@ router.post('/', (req, res) => {
         //use req.body to populate the columns in the post table
         title: req.body.title,
         post_url: req.body.post_url,
-        user_id: req.body.user_id
+        user_id: req.session.user_id
     })
     .then(dbPostData => res.json(dbPostData))
     .catch(err => {
@@ -108,7 +109,7 @@ router.put('/upvote', (req, res) => {
 });
 
 //updating an existing entry--the idea is to first retrieve the post instance by id, then alter the value of the title on this instance of a post
-router.put('/:id', (req, res) => {
+router.put('/:id', withAuth, (req, res) => {
     Post.update(
         {
             //use the req. parameter to find the post, then the req.body.title to replace the title of the post
@@ -133,7 +134,7 @@ router.put('/:id', (req, res) => {
 });
 
 //delete a post
-router.delete('/:id', (req, res) => {
+router.delete('/:id', withAuth, (req, res) => {
     Post.destroy({
         where: {
             id: req.params.id
